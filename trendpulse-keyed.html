@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TrendPulse</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@500;600&family=Inter:wght@400;500;600&display=swap');
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      --ink:#0a0a12; --panel:#13131f; --panel2:#181826; --line:#262633; --text:#e8e8f2; --muted:#8a8a9c; --faint:#5c5c6e; --accent:#8b5cf6; --accent2:#a78bfa; --rise:#34d399; --fall:#fb7185; --hot:#fbbf24;
+      font-family:'Inter',system-ui,sans-serif; color:var(--text); background:var(--ink); min-height:100vh; line-height:1.5; -webkit-font-smoothing:antialiased;
+    }
+    .tp-root *{box-sizing:border-box}
+    .tp-wrap{max-width:1180px; margin:0 auto; padding:28px 20px 64px;}
+    .tp-head{display:flex; align-items:center; gap:12px; margin-bottom:6px;}
+    .tp-logo{width:34px; height:34px; border-radius:9px; background:#0b0b14; display:grid; place-items:center; box-shadow:0 0 0 1px var(--line) inset;}
+    .tp-mark{stroke:var(--accent); stroke-width:2.4; fill:none; stroke-linecap:round; stroke-linejoin:round;}
+    .tp-mark .pulse{stroke-dasharray:60; stroke-dashoffset:60; animation:trace 2.6s ease-in-out infinite;}
+    @keyframes trace{0%{stroke-dashoffset:60;}55%{stroke-dashoffset:0;}100%{stroke-dashoffset:-60;}}
+    .tp-name{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:21px; letter-spacing:-.01em;}
+    .tp-name b{color:var(--accent2); font-weight:700;}
+    .tp-tag{color:var(--muted); font-size:13.5px; margin:0 0 22px; max-width:660px;}
+    .tp-search{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:14px;}
+    .tp-row{display:flex; gap:10px; flex-wrap:wrap;}
+    .tp-field{flex:1 1 320px; display:flex; align-items:center; gap:10px; background:var(--panel2); border:1px solid var(--line); border-radius:11px; padding:0 14px;}
+    .tp-input{flex:1; background:transparent; border:0; outline:0; color:var(--text); font-size:15px; padding:13px 0; font-family:inherit;}
+    .tp-input::placeholder{color:var(--faint);}
+    .tp-go{flex:none; border:0; cursor:pointer; border-radius:11px; padding:0 22px; background:var(--accent); color:#fff; font-weight:600; font-size:14.5px; font-family:inherit; transition:background .15s, transform .05s; display:flex; align-items:center; gap:8px; min-height:46px;}
+    .tp-go:hover{background:var(--accent2);} .tp-go:active{transform:translateY(1px);} .tp-go:disabled{opacity:.5; cursor:not-allowed;}
+    .tp-filters{display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;}
+    .tp-sel{position:relative; flex:1 1 180px;}
+    .tp-sel select{width:100%; appearance:none; background:var(--panel2); color:var(--text); border:1px solid var(--line); border-radius:10px; padding:10px 32px 10px 12px; font-size:13px; font-family:inherit; cursor:pointer;}
+    .tp-sel::after{content:""; position:absolute; right:13px; top:50%; width:7px; height:7px; border-right:1.6px solid var(--muted); border-bottom:1.6px solid var(--muted); transform:translateY(-70%) rotate(45deg); pointer-events:none;}
+    .tp-sel select:focus, .tp-input:focus-visible, .tp-go:focus-visible{outline:2px solid var(--accent2); outline-offset:2px;}
+    .tp-grid{display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); gap:18px; margin-top:22px;}
+    .tp-section-h{display:flex; align-items:baseline; justify-content:space-between; margin:0 2px 4px;}
+    .tp-section-h h2{font-family:'Space Grotesk',sans-serif; font-size:14px; font-weight:600; letter-spacing:.02em; text-transform:uppercase; color:var(--muted); margin:0;}
+    .tp-count{font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--faint);}
+    .tp-legend{font-size:11px; color:var(--faint); margin:0 2px 10px; line-height:1.5;}
+    .tp-list,.tp-ideas{border:1px solid var(--line); border-radius:14px; overflow:hidden; background:var(--panel);}
+    .tp-scroll{max-height:560px; overflow-y:auto;}
+    .tp-scroll::-webkit-scrollbar,.tp-ideas-body::-webkit-scrollbar{width:9px;}
+    .tp-scroll::-webkit-scrollbar-thumb,.tp-ideas-body::-webkit-scrollbar-thumb{background:#2c2c3a; border-radius:9px; border:2px solid var(--panel);}
+    .tp-item{display:flex; align-items:center; gap:11px; width:100%; text-align:left; background:transparent; border:0; border-bottom:1px solid var(--line); cursor:pointer; padding:11px 14px; color:var(--text); font-family:inherit; transition:background .12s;}
+    .tp-item:last-child{border-bottom:0;} .tp-item:hover{background:var(--panel2);} .tp-item[data-active="true"]{background:#1d1730; box-shadow:inset 3px 0 0 var(--accent);}
+    .tp-rank{font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--faint); width:22px; flex:none;}
+    .tp-phrase{flex:1; min-width:0; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+    .tp-hot{font-size:9.5px; font-weight:700; letter-spacing:.04em; color:#1a1206; background:var(--hot); padding:2px 5px; border-radius:5px; flex:none; cursor:help;}
+    .tp-trend{font-family:'JetBrains Mono',monospace; font-size:11px; padding:2px 7px; border-radius:6px; flex:none; background:var(--panel2); border:1px solid var(--line);}
+    .tp-trend[data-t="rising"]{color:var(--rise);} .tp-trend[data-t="falling"]{color:var(--fall);} .tp-trend[data-t="steady"]{color:var(--muted);}
+    .tp-int{font-family:'Space Grotesk',sans-serif; font-size:15px; font-weight:700; color:var(--text); width:54px; text-align:right; flex:none; display:flex; align-items:baseline; justify-content:flex-end; gap:4px;}
+    .tp-int small{font-family:'Inter',sans-serif; font-size:9px; font-weight:500; color:var(--faint);}
+    .tp-ideas{display:flex; flex-direction:column;}
+    .tp-back{display:none;}
+    .tp-ideas-head{padding:16px 16px 0;}
+    .tp-eyebrow{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--accent2); letter-spacing:.03em;}
+    .tp-ideas-head h3{font-family:'Space Grotesk',sans-serif; font-size:18px; font-weight:600; margin:4px 0 2px; word-break:break-word;}
+    .tp-ideas-sub{color:var(--muted); font-size:12.5px; margin:0;}
+    .tp-tabs{display:flex; gap:6px; padding:14px 16px 0;}
+    .tp-tab{border:1px solid var(--line); background:var(--panel2); color:var(--muted); cursor:pointer; border-radius:9px; padding:8px 14px; font-size:13px; font-weight:600; font-family:inherit; transition:.12s;}
+    .tp-tab[data-on="true"]{background:var(--accent); color:#fff; border-color:var(--accent);}
+    .tp-ideas-body{padding:14px 16px 16px; overflow-y:auto; max-height:520px;}
+    .tp-card{border:1px solid var(--line); background:var(--panel2); border-radius:11px; padding:12px 13px; margin-bottom:9px; position:relative; animation:rise .28s ease both;}
+    @keyframes rise{from{opacity:0; transform:translateY(6px);}to{opacity:1; transform:none;}}
+    .tp-card-top{display:flex; align-items:center; gap:8px; margin-bottom:4px;}
+    .tp-num{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--faint); flex:none;}
+    .tp-fmt{font-size:10px; font-weight:700; letter-spacing:.03em; text-transform:uppercase; color:var(--accent2); background:rgba(139,92,246,.13); padding:2px 7px; border-radius:6px;}
+    .tp-copy{margin-left:auto; background:transparent; border:1px solid var(--line); color:var(--muted); border-radius:7px; padding:4px 9px; font-size:11px; cursor:pointer; font-family:inherit; transition:.12s;}
+    .tp-copy:hover{color:var(--text); border-color:var(--accent);} .tp-copy[data-done="true"]{color:var(--rise); border-color:var(--rise);}
+    .tp-card h4{font-size:14px; font-weight:600; margin:0 0 3px; line-height:1.35;} .tp-card p{font-size:12.5px; color:var(--muted); margin:0;}
+    .tp-more{width:100%; margin-top:4px; border:1px dashed var(--line); background:transparent; color:var(--accent2); border-radius:11px; padding:12px; font-size:13.5px; font-weight:600; cursor:pointer; font-family:inherit; transition:.12s;}
+    .tp-more:hover{border-color:var(--accent); background:rgba(139,92,246,.06);} .tp-more:disabled{opacity:.6; cursor:wait;}
+    .tp-empty,.tp-err{padding:46px 22px; text-align:center; color:var(--muted);} .tp-empty h3{font-family:'Space Grotesk',sans-serif; color:var(--text); font-size:16px; margin:0 0 4px; font-weight:600;} .tp-empty p{font-size:13px; margin:0 auto; max-width:320px;} .tp-err{color:var(--fall);}
+    .tp-retry{margin-top:12px; background:transparent; border:1px solid var(--fall); color:var(--fall); border-radius:9px; padding:8px 16px; font-size:13px; cursor:pointer; font-family:inherit;}
+    .tp-loadnote{padding:20px 16px 8px; text-align:center; color:var(--muted); font-size:12.5px;}
+    .tp-skel{height:46px; border-radius:11px; margin:0 14px 9px; background:linear-gradient(90deg,var(--panel2) 0%,#20202e 50%,var(--panel2) 100%); background-size:200% 100%; animation:shimmer 1.3s infinite;}
+    .tp-skel.big{height:62px; margin:0 0 9px;} @keyframes shimmer{from{background-position:200% 0;}to{background-position:-200% 0;}}
+    .tp-spin{display:inline-block; width:15px; height:15px; border:2px solid currentColor; border-top-color:transparent; border-radius:50%; animation:spin .7s linear infinite; flex:none;} @keyframes spin{to{transform:rotate(360deg);}}
+    .icon{width:18px;height:18px;display:inline-block;flex:none}
+    @media (max-width:860px){ .tp-grid{grid-template-columns:1fr;} .tp-root[data-detail="true"] .tp-list-pane{display:none;} .tp-root:not([data-detail="true"]) .tp-ideas-pane{display:none;} .tp-back{display:inline-flex; align-items:center; gap:6px; background:transparent; border:0; color:var(--accent2); font-size:13px; cursor:pointer; font-family:inherit; padding:14px 16px 0;} }
+    @media (prefers-reduced-motion:reduce){ .tp-mark .pulse,.tp-card,.tp-skel,.tp-spin{animation:none;} }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useCallback } = React;
+
+    function parseArray(text) {
+      let t = (text || '').replace(/```json/gi, '').replace(/```/g, '').trim();
+      const start = t.indexOf('[');
+      if (start >= 0) t = t.slice(start);
+      try { const a = JSON.parse(t); if (Array.isArray(a)) return a; } catch {}
+      const objs = t.match(/\{[^{}]*\}/g) || [];
+      const out = [];
+      for (const o of objs) { try { out.push(JSON.parse(o)); } catch {} }
+      return out;
+    }
+
+    async function callClaude(prompt, useWeb) {
+      const body = {
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }],
+      };
+      if (useWeb) body.tools = [{ type: 'web_search_20250305', name: 'web_search' }];
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': 'AQ.Ab8RN6KRypFnlgJN-cnx9Fd-XJ5bbBQlBW26-f8J2a4XjW35RA', 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+      const data = await res.json();
+      return (data.content || []).filter((b) => b.type === 'text').map((b) => b.text).join('\n');
+    }
+
+    async function fetchTrends(query, country, timeRange) {
+      const where = country === 'All countries' ? 'worldwide' : country;
+      const window = timeRange.toLowerCase();
+      const prompt = `Use web search to find the search phrases people ACTUALLY type related to "${query}" (${where}, interest over ${window}). Look at Google autocomplete suggestions, "related searches", "people also ask", and current trending queries. Prefer real, specific phrases over generic ones, and avoid simply prepending words like "best/cheap/industrial" to the term. Return ONLY a JSON array of up to 20 real phrases — no markdown, no commentary. Each item: {"phrase": string, "interest": integer 0-100 (relative within this set; 100 = most-searched), "trend": "rising"|"steady"|"falling", "breakout": boolean} Estimate interest and trend from what the search results actually show (recency, prominence, how often a phrase recurs). Do NOT fabricate absolute monthly search-volume numbers.`;
+      const text = await callClaude(prompt, true);
+      const raw = parseArray(text);
+      const TR = new Set(['rising', 'steady', 'falling']);
+      const rows = raw.map((d) => ({
+        phrase: String(d.phrase || '').trim(),
+        interest: Math.max(0, Math.min(100, Math.round(Number(d.interest) || 0))),
+        trend: TR.has(d.trend) ? d.trend : 'steady',
+        breakout: !!d.breakout,
+      })).filter((r) => r.phrase);
+      const seen = new Set();
+      const unique = rows.filter((r) => {
+        const k = r.phrase.toLowerCase();
+        if (seen.has(k)) return false;
+        seen.add(k);
+        return true;
+      });
+      unique.sort((a, b) => b.interest - a.interest);
+      if (!unique.length) throw new Error('No phrases came back — try a different term.');
+      return unique;
+    }
+
+    async function generateIdeas({ businessQuery, phrase, type, existingTitles }) {
+      const isBlog = type === 'blog';
+      const formats = isBlog ? "'How-to', 'Listicle', 'Comparison', 'Case study', 'Guide', 'Opinion', 'FAQ'" : "'Reel', 'Carousel', 'Story', 'Post', 'Short video', 'Poll', 'Behind the scenes'";
+      const avoid = existingTitles.length ? `Do NOT repeat or rephrase any of these already-used ideas: ${existingTitles.map((t) => `"${t}"`).join(', ')}.` : '';
+      const prompt = `You are a senior content strategist helping a business turn search demand into content. Business / search context: "${businessQuery}" Trending search phrase to build content around: "${phrase}" Generate exactly 10 fresh ${isBlog ? 'BLOG POST' : 'SOCIAL MEDIA'} content ideas that directly capitalize on people searching this phrase. Make each one specific, practical, and clearly distinct from the others. ${avoid} Respond with ONLY a valid JSON array — no markdown, no code fences, no commentary. Each element: - "title": string, a punchy ${isBlog ? 'headline' : 'hook / caption concept'} (max ~70 characters) - "description": string, one sentence on the angle - "format": one of ${formats} Return exactly 10 objects.`;
+      const text = await callClaude(prompt, false);
+      const arr = parseArray(text);
+      if (!arr.length) throw new Error("Couldn't parse ideas — tap retry.");
+      return arr.slice(0, 10).map((d) => ({
+        title: String(d.title || '').slice(0, 120),
+        description: String(d.description || ''),
+        format: String(d.format || ''),
+      }));
+    }
+
+    const COUNTRIES = ['All countries', 'Australia', 'United States', 'United Kingdom', 'India', 'Bangladesh', 'Indonesia', 'Argentina', 'Hong Kong', 'Costa Rica', 'Lithuania'];
+    const RANGES = ['Past 24 hours', 'Past 7 days', 'Past 30 days', 'Past 12 months', 'Past 5 years'];
+
+    const IconSearch = () => <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>;
+    const IconBolt = () => <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M13 2 3 14h7l-1 8 10-12h-7z"></path></svg>;
+    const IconArrowLeft = () => <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></svg>;
+    const IconCopy = () => <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>;
+    const IconSpark = () => <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"></path></svg>;
+
+    function TrendPulse() {
+      const [query, setQuery] = useState('');
+      const [submitted, setSubmitted] = useState('');
+      const [country, setCountry] = useState(COUNTRIES[0]);
+      const [range, setRange] = useState(RANGES[3]);
+      const [results, setResults] = useState([]);
+      const [loadingResults, setLoadingResults] = useState(false);
+      const [resultsErr, setResultsErr] = useState(null);
+      const [selected, setSelected] = useState(null);
+      const [activeQuery, setActiveQuery] = useState('');
+      const [tab, setTab] = useState('blog');
+      const [ideas, setIdeas] = useState({ blog: [], social: [] });
+      const [loadingIdeas, setLoadingIdeas] = useState({ blog: false, social: false });
+      const [ideaErr, setIdeaErr] = useState({ blog: null, social: null });
+      const [copied, setCopied] = useState(null);
+      const searchToken = useRef(0);
+      const ideaToken = useRef(0);
+
+      useEffect(() => {
+        const q = submitted.trim();
+        if (!q) {
+          setResults([]); setResultsErr(null); setLoadingResults(false); setSelected(null); return;
+        }
+        setLoadingResults(true); setResultsErr(null);
+        const token = ++searchToken.current;
+        (async () => {
+          try {
+            const rows = await fetchTrends(q, country, range);
+            if (token !== searchToken.current) return;
+            setResults(rows);
+            setSelected((prev) => (prev && rows.some((r) => r.phrase === prev.phrase) ? prev : null));
+          } catch (e) {
+            if (token === searchToken.current) { setResults([]); setResultsErr(e.message || 'Search failed.'); }
+          } finally {
+            if (token === searchToken.current) setLoadingResults(false);
+          }
+        })();
+      }, [submitted, country, range]);
+
+      const runSearch = () => { if (query.trim()) setSubmitted(query.trim()); };
+      const onKey = (e) => { if (e.key === 'Enter') runSearch(); };
+
+      const loadMore = useCallback(async (type, phraseObj) => {
+        const target = phraseObj || selected;
+        if (!target) return;
+        const token = ++ideaToken.current;
+        setIdeaErr((e) => ({ ...e, [type]: null }));
+        setLoadingIdeas((l) => ({ ...l, [type]: true }));
+        try {
+          const existingTitles = ideas[type].map((i) => i.title);
+          const batch = await generateIdeas({ businessQuery: activeQuery || submitted, phrase: target.phrase, type, existingTitles });
+          if (token !== ideaToken.current && phraseObj) return;
+          setIdeas((prev) => ({ ...prev, [type]: [...prev[type], ...batch] }));
+        } catch (e) {
+          setIdeaErr((er) => ({ ...er, [type]: e.message || 'Could not generate ideas.' }));
+        } finally {
+          setLoadingIdeas((l) => ({ ...l, [type]: false }));
+        }
+      }, [selected, ideas, activeQuery, submitted]);
+
+      const selectPhrase = useCallback((row) => {
+        ideaToken.current++;
+        setSelected(row);
+        setActiveQuery(submitted.trim());
+        setTab('blog');
+        setIdeas({ blog: [], social: [] });
+        setIdeaErr({ blog: null, social: null });
+        setLoadingIdeas({ blog: false, social: false });
+        loadMore('blog', row);
+      }, [loadMore, submitted]);
+
+      useEffect(() => {
+        if (!selected) return;
+        if (ideas[tab].length === 0 && !loadingIdeas[tab] && !ideaErr[tab]) loadMore(tab);
+      }, [tab, selected]);
+
+      const copyIdea = (key, idea) => {
+        const text = `${idea.title}\n${idea.description}${idea.format ? `\n[${idea.format}]` : ''}`;
+        navigator.clipboard?.writeText(text);
+        setCopied(key);
+        setTimeout(() => setCopied((c) => (c === key ? null : c)), 1400);
+      };
+
+      const hasSubmitted = submitted.trim().length > 0;
+
+      return (
+        <div className="tp-root" data-detail={!!selected}>
+          <div className="tp-wrap">
+            <div className="tp-head">
+              <div className="tp-logo" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" className="tp-mark"><path d="M3 14h4l2-5 4 10 2-5h6" className="pulse"></path></svg>
+              </div>
+              <div className="tp-name">Trend<b>Pulse</b></div>
+            </div>
+            <p className="tp-tag">Search what your business does — TrendPulse pulls the real phrases people are searching from the live web, then turns any one of them into blog and social content ideas.</p>
+
+            <div className="tp-search">
+              <div className="tp-row">
+                <div className="tp-field">
+                  <IconSearch />
+                  <input className="tp-input" placeholder="Enter a product, service, or topic" value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={onKey} />
+                </div>
+                <button className="tp-go" onClick={runSearch} disabled={!query.trim() || loadingResults}>
+                  {loadingResults ? <span className="tp-spin" /> : <IconBolt />}
+                  {loadingResults ? 'Searching…' : 'Find trends'}
+                </button>
+              </div>
+              <div className="tp-filters">
+                <div className="tp-sel"><select value={country} onChange={(e) => setCountry(e.target.value)}>{COUNTRIES.map(c => <option key={c}>{c}</option>)}</select></div>
+                <div className="tp-sel"><select value={range} onChange={(e) => setRange(e.target.value)}>{RANGES.map(r => <option key={r}>{r}</option>)}</select></div>
+              </div>
+            </div>
+
+            <div className="tp-grid">
+              <section className="tp-list-pane">
+                <div className="tp-section-h"><h2>Trend phrases</h2><div className="tp-count">{results.length} results</div></div>
+                <p className="tp-legend">Real phrases from live web search · interest is an estimate (0–100) · monthly volume needs a paid source</p>
+                <div className="tp-list">
+                  <div className="tp-scroll">
+                    {!hasSubmitted && <div className="tp-empty"><h3>Start with a search</h3><p>Enter a product or service and press Enter. TrendPulse searches the live web for what people are actually typing.</p></div>}
+                    {loadingResults && Array.from({length:8}).map((_,i)=><div key={i} className="tp-skel" />)}
+                    {resultsErr && !loadingResults && <div className="tp-err">{resultsErr}<div><button className="tp-retry" onClick={runSearch}>Retry</button></div></div>}
+                    {!loadingResults && !resultsErr && results.map((row, i) => (
+                      <button key={row.phrase + i} className="tp-item" data-active={selected?.phrase===row.phrase} onClick={() => selectPhrase(row)}>
+                        <div className="tp-rank">{String(i+1).padStart(2,'0')}</div>
+                        <div className="tp-phrase">{row.phrase}</div>
+                        {row.breakout && <div className="tp-hot">HOT</div>}
+                        <div className="tp-trend" data-t={row.trend}>{row.trend}</div>
+                        <div className="tp-int">{row.interest}<small>/100</small></div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </section>
+
+              <section className="tp-ideas-pane">
+                <div className="tp-ideas">
+                  {selected && <button className="tp-back" onClick={() => setSelected(null)}><IconArrowLeft /> Back to phrases</button>}
+                  {!selected ? (
+                    <div className="tp-empty"><h3>Pick a phrase</h3><p>Click any phrase on the left and TrendPulse will write content ideas for it.</p></div>
+                  ) : (
+                    <>
+                      <div className="tp-ideas-head">
+                        <div className="tp-eyebrow">Selected phrase</div>
+                        <h3>{selected.phrase}</h3>
+                        <p className="tp-ideas-sub">Est. interest {selected.interest} · {selected.trend}{selected.breakout ? ' · breakout' : ''}</p>
+                      </div>
+                      <div className="tp-tabs">
+                        <button className="tp-tab" data-on={tab==='blog'} onClick={() => setTab('blog')}>Blog ideas</button>
+                        <button className="tp-tab" data-on={tab==='social'} onClick={() => setTab('social')}>Social ideas</button>
+                      </div>
+                      <div className="tp-ideas-body">
+                        {loadingIdeas[tab] && ideas[tab].length===0 && <><div className="tp-loadnote">Generating ideas…</div><div className="tp-skel big" /><div className="tp-skel big" /><div className="tp-skel big" /></>}
+                        {ideaErr[tab] && <div className="tp-err">{ideaErr[tab]}</div>}
+                        {ideas[tab].map((idea, i) => {
+                          const key = `${tab}-${i}`;
+                          return (
+                            <div className="tp-card" key={key}>
+                              <div className="tp-card-top">
+                                <div className="tp-num">{String(i+1).padStart(2,'0')}</div>
+                                {idea.format && <div className="tp-fmt">{idea.format}</div>}
+                                <button className="tp-copy" data-done={copied===key} onClick={() => copyIdea(key, idea)}>{copied===key ? 'Copied' : <><IconCopy /> Copy</>}</button>
+                              </div>
+                              <h4>{idea.title}</h4>
+                              <p>{idea.description}</p>
+                            </div>
+                          )
+                        })}
+                        {selected && <button className="tp-more" onClick={() => loadMore(tab)} disabled={loadingIdeas[tab]}>{loadingIdeas[tab] ? 'Generating more…' : 'Generate 10 more'} </button>}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </section>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<TrendPulse />);
+  </script>
+</body>
+</html>
